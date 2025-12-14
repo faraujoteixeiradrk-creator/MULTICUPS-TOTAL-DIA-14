@@ -1173,6 +1173,7 @@
                 // Se utiliza una heurística simple de acumulación
                 acc.powerP1 += current.potencia_p1_kw || 0;
                 acc.powerP2 += current.potencia_p2_kw || 0;
+                // Usar campos de 2.0TD como resumen para el MultiCups
                 acc.consumoP1 += current.consumo_punta || current.consumo_p1 || 0; // P1 Consumo (Punta en 2.0TD)
                 acc.consumoP2 += current.consumo_llano || current.consumo_p2 || 0; // P2 Consumo (Llano en 2.0TD)
                 acc.consumoP3 += current.consumo_valle || current.consumo_p3 || 0; // P3 Consumo (Valle en 2.0TD)
@@ -1286,9 +1287,9 @@
             const consumptionData = res.totalConsumptions;
             
             let energyRows = `
-                <div class="flex justify-between text-xs mb-1"><span>E1/P1 (Acumulado)</span><span class="font-mono">${num(consumptionData.consumo_punta, 0)} kWh</span></div>
-                <div class="flex justify-between text-xs mb-1"><span>E2/P2 (Acumulado)</span><span class="font-mono">${num(consumptionData.consumo_llano, 0)} kWh</span></div>
-                <div class="flex justify-between text-xs mb-1"><span>E3/P3 (Acumulado)</span><span class="font-mono">${num(consumptionData.consumo_valle, 0)} kWh</span></div>
+                <div class="flex justify-between text-xs mb-1"><span>E1/Punta (Acumulado)</span><span class="font-mono">${num(consumptionData.consumo_punta, 0)} kWh</span></div>
+                <div class="flex justify-between text-xs mb-1"><span>E2/Llano (Acumulado)</span><span class="font-mono">${num(consumptionData.consumo_llano, 0)} kWh</span></div>
+                <div class="flex justify-between text-xs mb-1"><span>E3/Valle (Acumulado)</span><span class="font-mono">${num(consumptionData.consumo_valle, 0)} kWh</span></div>
             `;
             const totalEnergy = consumptionData.consumo_punta + consumptionData.consumo_llano + consumptionData.consumo_valle;
 
@@ -1708,6 +1709,7 @@
             const savingsBox = `background-color: ${D_ACCENT_CTA}; color: white; font-size: 20px; font-weight: bold; padding: 15px; text-align: center; border-radius: 8px; margin: 15px 0;`;
             const footerStyle = `background-color: ${D_PRIMARY_MED}; height: 5px; margin-top: 10px; border-radius: 0 0 8px 8px;`;
             const GREEN_SAVE_COLOR = '#16a34a';
+            const btnStyle = `display: inline-block; background-color: ${RED_CTA}; color: white; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; margin: 20px 0; font-size: 16px;`;
 
             // --- PLANTILLA PARA AHORRO NEGATIVO ---
             if (bd.isNegativeSavings) {
@@ -2197,19 +2199,50 @@
                 return;
             }
             
-            // Crear el objeto de datos que incluye todos los campos necesarios
+            // Crear el objeto de datos base
             let dataForCalc = { ...data };
-
-            if (tariffType === '3.0TD') {
-                // Para 3.0TD, mapeamos P1/E1, P2/E2, P3/E3 (del QR) a P1-P3 y E1-E3
-                dataForCalc = {
-                    ...dataForCalc,
-                    potencia_p3_kw: 0, potencia_p4_kw: 0, potencia_p5_kw: 0, potencia_p6_kw: 0,
-                    consumo_p1: data.consumo_punta, consumo_p2: data.consumo_llano, consumo_p3: data.consumo_valle,
-                    consumo_p4: 0, consumo_p5: 0, consumo_p6: 0,
-                };
+            
+            // 1. Manejo de mapeo de Potencias y Consumos para 3.0TD/6.1TD (cuando la entrada es simplificada o QR)
+            if (tariffType === '3.0TD' || tariffType === '6.1TD') {
+                const isManual6PeriodInput = data.potencia_p3_kw !== undefined && data.consumo_p4 !== undefined;
+                
+                const p1_kw = data.potencia_p1_kw || 0;
+                const p2_kw = data.potencia_p2_kw || 0;
+                
+                if (!isManual6PeriodInput) {
+                    // Si es QR o 2.0TD input (solo 2 potencias y 3 consumos), propagamos potencias y mapeamos consumos.
+                    
+                    // Propagación de Potencias (Asumiendo P1=P3=P5 y P2=P4=P6 para 3.0TD)
+                    dataForCalc.potencia_p3_kw = p1_kw;
+                    dataForCalc.potencia_p4_kw = p2_kw;
+                    dataForCalc.potencia_p5_kw = p1_kw;
+                    dataForCalc.potencia_p6_kw = p2_kw;
+                    
+                    // Mapeo de Consumos (Punta/Llano/Valle a E1/E2/E3, el resto a 0)
+                    dataForCalc.consumo_p1 = data.consumo_punta || 0;
+                    dataForCalc.consumo_p2 = data.consumo_llano || 0;
+                    dataForCalc.consumo_p3 = data.consumo_valle || 0;
+                    dataForCalc.consumo_p4 = 0;
+                    dataForCalc.consumo_p5 = 0;
+                    dataForCalc.consumo_p6 = 0;
+                    
+                } else {
+                    // Si es entrada manual de 6 periodos, ya está todo en el objeto 'data'
+                    // Solo asegurar que los campos de consumo_pX existen
+                    for(let i=1; i<=6; i++) {
+                         dataForCalc[`consumo_p${i}`] = data[`consumo_p${i}`] || 0;
+                         dataForCalc[`potencia_p${i}_kw`] = data[`potencia_p${i}_kw`] || 0;
+                    }
+                }
+            } else if (tariffType === '2.0TD') {
+                // Para 2.0TD, aseguramos que los campos 'consumo_punta/llano/valle' están llenos.
+                // Si la entrada vino de un manual de 6 periodos, usamos C1, C2, C3 como P, L, V
+                dataForCalc.consumo_punta = data.consumo_punta !== undefined ? data.consumo_punta : (data.consumo_p1 || 0);
+                dataForCalc.consumo_llano = data.consumo_llano !== undefined ? data.consumo_llano : (data.consumo_p2 || 0);
+                dataForCalc.consumo_valle = data.consumo_valle !== undefined ? data.consumo_valle : (data.consumo_p3 || 0);
             }
             
+            // 2. Ejecutar la comparación con el objeto de datos corregido
             const results = tariffsToCompare.map(t => calculateTariffCost(t, dataForCalc, tariffType));
             
             let bestOverall = null;
@@ -2346,19 +2379,19 @@
             };
 
             for(let i=1; i<=6; i++) {
+                // Potencias (P1-P6)
                 data[`potencia_p${i}_kw`] = getVal(`input-p${i}-kw`);
-            }
-            
-            // Llenar consumo_punta/llano/valle para 2.0TD
-            data['consumo_punta'] = getVal('input-e1-kwh');
-            data['consumo_llano'] = getVal('input-e2-kwh');
-            data['consumo_valle'] = getVal('input-e3-kwh');
-            
-            // Llenar consumo_p1...p6 para 3.0TD/6.1TD (y 2.0TD fallback)
-            for(let i=1; i<=6; i++) {
+                
+                // Consumos (E1-E6)
                 data[`consumo_p${i}`] = getVal(`input-e${i}-kwh`);
             }
-
+            
+            // Llenar consumo_punta/llano/valle para 2.0TD (basado en E1, E2, E3)
+            data['consumo_punta'] = data.consumo_p1;
+            data['consumo_llano'] = data.consumo_p2;
+            data['consumo_valle'] = data.consumo_p3;
+            
+            
             if (data.importe_total <= 0) return window.showErrorModal("Introduce el total de la factura.");
             
             closeManualInputModal();
