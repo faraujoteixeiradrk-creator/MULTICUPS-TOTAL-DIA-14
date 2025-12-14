@@ -1188,7 +1188,6 @@
                 // Se utiliza una heurística simple de acumulación
                 acc.powerP1 += current.potencia_p1_kw || 0;
                 acc.powerP2 += current.potencia_p2_kw || 0;
-                // Usar campos de 2.0TD como resumen para el MultiCups
                 acc.consumoP1 += current.consumo_punta || current.consumo_p1 || 0; // P1 Consumo (Punta en 2.0TD)
                 acc.consumoP2 += current.consumo_llano || current.consumo_p2 || 0; // P2 Consumo (Llano en 2.0TD)
                 acc.consumoP3 += current.consumo_valle || current.consumo_p3 || 0; // P3 Consumo (Valle en 2.0TD)
@@ -1393,29 +1392,29 @@
             let allBreakdownsHTML = '';
 
             individualResults.forEach((resItem, index) => {
-                 const currentConfig = TARIFF_CONFIG[resItem.originalTariffType] || TARIFF_CONFIG['2.0TD'];
-                 const periods = currentConfig.periods;
-                 const powerPeriods = currentConfig.powerPeriods;
+                const currentConfig = TARIFF_CONFIG[resItem.originalTariffType] || TARIFF_CONFIG['2.0TD'];
+                const periods = currentConfig.periods;
+                const powerPeriods = currentConfig.powerPeriods;
 
-                 let energyBreakdown = '';
-                 resItem.energyCosts.forEach(e => {
-                      let label = `E${e.period}`;
-                      if (resItem.originalTariffType === '2.0TD') {
-                          if (e.period === 1) label += ' (Punta)';
-                          if (e.period === 2) label += ' (Llano)';
-                          if (e.period === 3) label += ' (Valle)';
-                      }
-                      
-                      if (e.period <= periods) {
-                           energyBreakdown += `<div class="flex justify-between"><span>${label} (${num(e.kwh, 0)} kWh x ${numPriceFormula(e.price)} €/kWh)</span><span>${num(e.cost, 2)} €</span></div>`;
-                      }
+                let energyBreakdown = '';
+                resItem.energyCosts.forEach(e => {
+                    let label = `E${e.period}`;
+                    if (resItem.originalTariffType === '2.0TD') {
+                         if (e.period === 1) label += ' (Punta)';
+                         if (e.period === 2) label += ' (Llano)';
+                         if (e.period === 3) label += ' (Valle)';
+                    }
+                    
+                    if (e.period <= periods) {
+                         energyBreakdown += `<div class="flex justify-between"><span>${label} (${num(e.kwh, 0)} kWh x ${numPriceFormula(e.price)} €/kWh)</span><span>${num(e.cost, 2)} €</span></div>`;
+                    }
                  });
 
                  let powerBreakdown = '';
                  resItem.powerCosts.forEach(p => {
-                       if (p.period <= powerPeriods) {
-                           powerBreakdown += `<div class="flex justify-between"><span>P${p.period} (${num(p.kw, 2)} kW x ${numPriceFormula(p.priceDay)} €/día)</span><span>${num(p.cost, 2)} €</span></div>`;
-                       }
+                      if (p.period <= powerPeriods) {
+                          powerBreakdown += `<div class="flex justify-between"><span>P${p.period} (${num(p.kw, 2)} kW x ${numPriceFormula(p.priceDay)} €/día)</span><span>${num(p.cost, 2)} €</span></div>`;
+                      }
                  });
                  
                  const statusText = resItem.isNegativeSavings ? 
@@ -1423,35 +1422,35 @@
                      `<p class="text-sm font-bold text-green-600 mb-2">💰 AHORRO ANUAL: ${eur(resItem.savings)}</p>`;
 
                  allBreakdownsHTML += `
-                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-lg text-sm">
-                         <h4 class="text-lg font-black text-slate-800 border-b pb-2 mb-3">Suministro ${index + 1}: ${resItem.cups} (${resItem.originalTariffType})</h4>
-                         ${statusText}
-                         <div class="grid grid-cols-2 gap-4 border-b border-slate-200 pb-3 mb-3">
-                             <div class="text-center">
-                                 <p class="text-slate-400 text-xs uppercase">Factura Actual Periodo</p>
-                                 <p class="font-bold text-red-500">${eur(resItem.importe_total)}</p>
-                             </div>
-                             <div class="text-center">
-                                 <p class="text-slate-400 text-xs uppercase">Nuevo Coste Periodo</p>
-                                 <p class="font-black ${brand.PRIMARY_TEXT}">${eur(resItem.totalPeriod)}</p>
-                             </div>
-                         </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-lg text-sm">
+                        <h4 class="text-lg font-black text-slate-800 border-b pb-2 mb-3">Suministro ${index + 1}: ${resItem.cups} (${resItem.originalTariffType})</h4>
+                        ${statusText}
+                        <div class="grid grid-cols-2 gap-4 border-b border-slate-200 pb-3 mb-3">
+                            <div class="text-center">
+                                <p class="text-slate-400 text-xs uppercase">Factura Actual Periodo</p>
+                                <p class="font-bold text-red-500">${eur(resItem.importe_total)}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-slate-400 text-xs uppercase">Nuevo Coste Periodo</p>
+                                <p class="font-black ${brand.PRIMARY_TEXT}">${eur(resItem.totalPeriod)}</p>
+                            </div>
+                        </div>
 
-                         <p class="font-bold text-slate-800 mb-2">Desglose (${resItem.offer.name}):</p>
-                         
-                         <div class="pl-2 space-y-2 font-mono text-xs">
-                             <p class="font-bold text-slate-700">POTENCIA</p>
-                             ${powerBreakdown}
-                             <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Potencia</span><span>${num(resItem.subPower, 2)} €</span></div>
-                             
-                             <p class="font-bold text-slate-700 pt-2">ENERGÍA</p>
-                             ${energyBreakdown}
-                             <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Energía (Neto)</span><span>${num(resItem.subEnergyNet, 2)} €</span></div>
-                             
-                             <div class="flex justify-between font-black ${brand.PRIMARY_TEXT} pt-2"><span>TOTAL CON IMPUESTOS</span><span>${eur(resItem.totalPeriod)}</span></div>
-                         </div>
-                     </div>
-                 `;
+                        <p class="font-bold text-slate-800 mb-2">Desglose (${resItem.offer.name}):</p>
+                        
+                        <div class="pl-2 space-y-2 font-mono text-xs">
+                            <p class="font-bold text-slate-700">POTENCIA</p>
+                            ${powerBreakdown}
+                            <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Potencia</span><span>${num(resItem.subPower, 2)} €</span></div>
+                            
+                            <p class="font-bold text-slate-700 pt-2">ENERGÍA</p>
+                            ${energyBreakdown}
+                            <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Energía (Neto)</span><span>${num(resItem.subEnergyNet, 2)} €</span></div>
+                            
+                            <div class="flex justify-between font-black ${brand.PRIMARY_TEXT} pt-2"><span>TOTAL CON IMPUESTOS</span><span>${eur(resItem.totalPeriod)}</span></div>
+                        </div>
+                    </div>
+                `;
             });
 
 
@@ -1738,25 +1737,25 @@
             const discountLine = bd.discountRate > 0 ? `Descuento: ${num(bd.discountRate * 100, 0)}% aplicado a Energía.${LB}` : '';
 
             const emailBody = `Hola ${D_BRAND_NAME.toUpperCase()}, confirmo la aceptación de la oferta con CUPS: ${bd.cups}.${LB}${LB}` +
-                                     `--- DATOS DE LA OFERTA ---${LB}${LB}` +
-                                     `Comercializadora y Tarifa: ${D_BRAND_NAME.toUpperCase()} - ${offer.name}${LB}` +
-                                     `Ahorro Anual Estimado: ${eur(bd.savings)}${LB}` +
-                                     `Total Mensual Estimado: ${monthlyEstimate}${LB}` +
-                                     `Consumo Total Facturado: ${totalConsumption}${LB}` +
-                                     `${discountLine}` + 
-                                     `--- DETALLE DE PRECIOS (€) ---${LB}` +
-                                     `P1 (Potencia - €/kW/día): ${numPriceFormula(p1PricePerDay)}${LB}` +
-                                     `P2 (Potencia - €/kW/día): ${numPriceFormula(p2PricePerDay)}${LB}` +
-                                     `E1 (Energía - €/kWh): ${numPriceFormula(e1Price)}${LB}` +
-                                     `E2 (Energía - €/kWh): ${numPriceFormula(e2Price)}${LB}` +
-                                     `E3 (Energía - €/kWh): ${numPriceFormula(e3Price)}${LB}` +
-                                     `------------------------------${LB}${LB}` +
-                                     `DATOS DEL CLIENTE (A RELLENAR):${LB}` +
-                                     `Nombre completo: ${clientName}${LB}` +
-                                     `Teléfono de contacto: ${clientPhone}${LB}` +
-                                     `Email de contacto: ${clientEmail}${LB}${LB}` +
-                                     `INFORMACIÓN ADICIONAL:${LB}` +
-                                     `[AGREGUE CUALQUIER COMENTARIO EXTRA AQUÍ]${LB}${LB}`;
+                                  `--- DATOS DE LA OFERTA ---${LB}${LB}` +
+                                  `Comercializadora y Tarifa: ${D_BRAND_NAME.toUpperCase()} - ${offer.name}${LB}` +
+                                  `Ahorro Anual Estimado: ${eur(bd.savings)}${LB}` +
+                                  `Total Mensual Estimado: ${monthlyEstimate}${LB}` +
+                                  `Consumo Total Facturado: ${totalConsumption}${LB}` +
+                                  `${discountLine}` + 
+                                  `--- DETALLE DE PRECIOS (€) ---${LB}` +
+                                  `P1 (Potencia - €/kW/día): ${numPriceFormula(p1PricePerDay)}${LB}` +
+                                  `P2 (Potencia - €/kW/día): ${numPriceFormula(p2PricePerDay)}${LB}` +
+                                  `E1 (Energía - €/kWh): ${numPriceFormula(e1Price)}${LB}` +
+                                  `E2 (Energía - €/kWh): ${numPriceFormula(e2Price)}${LB}` +
+                                  `E3 (Energía - €/kWh): ${numPriceFormula(e3Price)}${LB}` +
+                                  `------------------------------${LB}${LB}` +
+                                  `DATOS DEL CLIENTE (A RELLENAR):${LB}` +
+                                  `Nombre completo: ${clientName}${LB}` +
+                                  `Teléfono de contacto: ${clientPhone}${LB}` +
+                                  `Email de contacto: ${clientEmail}${LB}${LB}` +
+                                  `INFORMACIÓN ADICIONAL:${LB}` +
+                                  `[AGREGUE CUALQUIER COMENTARIO EXTRA AQUÍ]${LB}${LB}`;
 
             const subject = `FORMALIZACIÓN DE CONTRATO - CUPS: ${bd.cups}`;
             const formalizationRecipients = 'f.araujo@drk.es,r.guerra@drk.es,s.caballero@drk.es'; // Email por defecto
@@ -1774,32 +1773,30 @@
 
             // --- PLANTILLA PARA AHORRO NEGATIVO ---
             if (bd.isNegativeSavings) {
-                 return `
-                     <table cellpadding="0" cellspacing="0" style="${tableMain}">
-                         <tr><td colspan="2" style="${headerCell}">
-                             <h1 style="margin:0; font-size: 24px;">ESTUDIO DE AHORRO</h1>
-                             <p style="margin:5px 0 0 0; font-size: 14px; opacity: 0.9;">TU TARIFA ACTUAL ES LA MÁS COMPETITIVA</p>
-                         </td></tr>
-                         <tr><td colspan="2" style="padding: 15px;">
-                             <p style="margin: 0; font-size: 13px;"><strong>CLIENTE:</strong> ${clientName}</p>
-                             <p style="margin: 5px 0 0 0; font-size: 13px;"><strong>CUPS:</strong> ${bd.cups}</p>
-                             <p style="margin: 5px 0 0 0; font-size: 13px;"><strong>COMERCIAL:</strong> ${commercialCode || 'N/A'}</p>
-                         </td></tr>
-                         <tr><td colspan="2" style="background-color: ${BG_LIGHT}; padding: 25px 20px; text-align: center; border-top: 2px solid ${D_PRIMARY_MED}; border-bottom: 2px solid ${D_PRIMARY_MED};">
-                             <div style="font-size: 60px; color: ${GREEN_SAVE_COLOR}; margin-bottom: 10px; line-height: 1;">&#9989;</div>
-                             <p style="margin: 0; color: ${D_PRIMARY_DARK}; font-size: 22px; font-weight: bold;">¡Excelente Noticia!</p>
-                             <h2 style="margin: 5px 0 0 0; color: ${D_PRIMARY_DARK}; font-size: 18px; font-weight: normal;">TU TARIFA ACTUAL ES LA MÁS COMPETITIVA DEL MERCADO</h2>
-                             <p style="margin: 0; font-size: 14px; color: #555;">En este momento, no existe una oferta que mejore tu coste actual. Seguiremos estudiando.</p>
-                         </td></tr>
-                         <tr><td colspan="2" style="padding: 20px; text-align: center;">
-                             <p style="font-size: 14px; font-weight: bold; color: ${D_PRIMARY_DARK}; margin-bottom: 5px;">COSTE ANUAL ESTIMADO (ACTUAL):</p>
-                             <span style="font-size: 32px; font-weight: bold; color: ${GREEN_SAVE_COLOR}; display: block;">${eur(bd.originalBillAnnual)}</span>
-                             <p style="font-size: 12px; color: #888;">/ AÑO (basado en el consumo de ${bd.dias_facturados} días)</p>
-                             <p style="margin-top: 15px; font-size: 14px; color: #555;">[Colaborador: ${commercialCode}] | Este resumen es una simulación.</p>
-                         </td></tr>
-                         <tr><td colspan="2" style="padding: 0; height: 10px;"><div style="${footerStyle}"></div></td></tr>
-                     </table>
-                 `;
+                 return `<table cellpadding="0" cellspacing="0" style="${tableMain}">
+                        <tr><td colspan="2" style="${headerCell}">
+                            <h1 style="margin:0; font-size: 24px;">ESTUDIO DE AHORRO</h1>
+                            <p style="margin:5px 0 0 0; font-size: 14px; opacity: 0.9;">TU TARIFA ACTUAL ES LA MÁS COMPETITIVA</p>
+                        </td></tr>
+                        <tr><td colspan="2" style="padding: 15px;">
+                            <p style="margin: 0; font-size: 13px;"><strong>CLIENTE:</strong> ${clientName}</p>
+                            <p style="margin: 5px 0 0 0; font-size: 13px;"><strong>CUPS:</strong> ${bd.cups}</p>
+                            <p style="margin: 5px 0 0 0; font-size: 13px;"><strong>COMERCIAL:</strong> ${commercialCode || 'N/A'}</p>
+                        </td></tr>
+                        <tr><td colspan="2" style="background-color: ${BG_LIGHT}; padding: 25px 20px; text-align: center; border-top: 2px solid ${D_PRIMARY_MED}; border-bottom: 2px solid ${D_PRIMARY_MED};">
+                            <div style="font-size: 60px; color: ${GREEN_SAVE_COLOR}; margin-bottom: 10px; line-height: 1;">&#9989;</div>
+                            <p style="margin: 0; color: ${D_PRIMARY_DARK}; font-size: 22px; font-weight: bold;">¡Excelente Noticia!</p>
+                            <h2 style="margin: 5px 0 0 0; color: ${D_PRIMARY_DARK}; font-size: 18px; font-weight: normal;">TU TARIFA ACTUAL ES LA MÁS COMPETITIVA DEL MERCADO</h2>
+                            <p style="margin: 0; font-size: 14px; color: #555;">En este momento, no existe una oferta que mejore tu coste actual. Seguiremos estudiando.</p>
+                        </td></tr>
+                        <tr><td colspan="2" style="padding: 20px; text-align: center;">
+                            <p style="font-size: 14px; font-weight: bold; color: ${D_PRIMARY_DARK}; margin-bottom: 5px;">COSTE ANUAL ESTIMADO (ACTUAL):</p>
+                            <span style="font-size: 32px; font-weight: bold; color: ${GREEN_SAVE_COLOR}; display: block;">${eur(bd.originalBillAnnual)}</span>
+                            <p style="font-size: 12px; color: #888;">/ AÑO (basado en el consumo de ${bd.dias_facturados} días)</p>
+                            <p style="margin-top: 15px; font-size: 14px; color: #555;">[Colaborador: ${commercialCode}] | Este resumen es una simulación.</p>
+                        </td></tr>
+                        <tr><td colspan="2" style="padding: 0; height: 10px;"><div style="${footerStyle}"></div></td></tr>
+                    </table>`;
             }
 
             // --- PLANTILLA ESTÁNDAR (Ahorro Positivo) ---
@@ -1817,7 +1814,7 @@
             // Desglose: Energía
             let desgloseEnergia = bd.energyCosts.map(e => {
                 if (e.period <= currentTariffConfig.periods) {
-                     return `<tr><td style="${rowLabel} font-family: monospace; font-size: 12px;">E${e.period} (${num(e.kwh,0)} kWh x ${numPriceFormula(e.price)})</td><td style="${rowValue} font-family: monospace; font-size: 12px; white-space: nowrap;">${num(e.cost, 2)} €</td></tr>`;
+                    return `<tr><td style="${rowLabel} font-family: monospace; font-size: 12px;">E${e.period} (${num(e.kwh,0)} kWh x ${numPriceFormula(e.price)})</td><td style="${rowValue} font-family: monospace; font-size: 12px; white-space: nowrap;">${num(e.cost, 2)} €</td></tr>`;
                 }
                 return '';
             }).join('');
@@ -1885,8 +1882,7 @@
             `;
 
 
-            return `
-                <table cellpadding="0" cellspacing="0" style="${tableMain}">
+            return `<table cellpadding="0" cellspacing="0" style="${tableMain}">
                     <!-- HEADER -->
                     <tr><td colspan="2" style="${headerCell}">
                         <h1 style="margin:0; font-size: 24px;">ESTUDIO DE AHORRO</h1>
@@ -1958,8 +1954,7 @@
 
                     <!-- PIE DE PÁGINA BONITO -->
                     <tr><td colspan="2" style="padding: 0; height: 10px;"><div style="${footerStyle}"></div></td></tr>
-                </table>
-            `;
+                </table>`;
         }
 
 
@@ -1992,21 +1987,21 @@
             // Generar tabla de desglose individual
             let individualBreakdowns = '';
             individualResults.forEach((resItem, index) => {
-                 const isBest = resItem.isNegativeSavings === false;
-                 const currentConfig = TARIFF_CONFIG[resItem.originalTariffType] || TARIFF_CONFIG['2.0TD'];
-                 const periods = currentConfig.periods;
-                 const powerPeriods = currentConfig.powerPeriods;
+                const isBest = resItem.isNegativeSavings === false;
+                const currentConfig = TARIFF_CONFIG[resItem.originalTariffType] || TARIFF_CONFIG['2.0TD'];
+                const periods = currentConfig.periods;
+                const powerPeriods = currentConfig.powerPeriods;
 
-                 // Desglose: Potencia
-                 let desglosePotencia = resItem.powerCosts.map(p => {
+                // Desglose: Potencia
+                let desglosePotencia = resItem.powerCosts.map(p => {
                      if (p.period <= powerPeriods) {
                          return `<tr><td style="padding: 5px 8px; font-family: monospace; font-size: 11px; color: #555;">P${p.period} (${num(p.kw,2)} kW x ${resItem.dias_facturados}d x ${numPriceFormula(p.priceDay)})</td><td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: bold; color: #333; text-align: right; white-space: nowrap;">${num(p.cost, 2)} €</td></tr>`;
                      }
                      return '';
-                 }).join('');
+                }).join('');
 
-                 // Desglose: Energía
-                 let desgloseEnergia = resItem.energyCosts.map(e => {
+                // Desglose: Energía
+                let desgloseEnergia = resItem.energyCosts.map(e => {
                      if (e.period <= periods) {
                           let label = `E${e.period}`;
                           if (resItem.originalTariffType === '2.0TD') {
@@ -2017,35 +2012,35 @@
                           return `<tr><td style="padding: 5px 8px; font-family: monospace; font-size: 11px; color: #555;">${label} (${num(e.kwh,0)} kWh x ${numPriceFormula(e.price)})</td><td style="padding: 5px 8px; font-family: monospace; font-size: 11px; font-weight: bold; color: #333; text-align: right; white-space: nowrap;">${num(e.cost, 2)} €</td></tr>`;
                      }
                      return '';
-                 }).join('');
-                 
-                 const discountRowsHtml = resItem.discountAmount > 0 ? `
+                }).join('');
+                
+                const discountRowsHtml = resItem.discountAmount > 0 ? `
                      <tr><td style="padding: 5px 8px; font-weight: bold; color: #CC0000;">DESCUENTO COMERCIAL (${num(resItem.discountRate * 100, 0)}%)</td><td style="padding: 5px 8px; text-align: right; font-weight: bold; color: #CC0000; white-space: nowrap;">-${num(resItem.discountAmount, 2)} €</td></tr>
-                    ` : '';
+                 ` : '';
 
-                 individualBreakdowns += `
-                     <tr><td colspan="2" style="padding: 15px 20px 0 20px; background-color: #f8fafc; border-top: 2px solid #ddd;">
-                         <h4 style="margin: 0 0 10px 0; font-size: 16px; color: ${D_PRIMARY_DARK}; font-weight: bold;">[${index + 1}] CUPS: ${resItem.cups} (${resItem.originalTariffType})</h4>
-                         <p style="margin: 0 0 10px 0; font-size: 12px; color: #555;">Días Facturados: ${resItem.dias_facturados}. Ahorro Anual: ${isBest ? `<span style="color: ${GREEN_SAVE}; font-weight: bold;">${eur(resItem.savings)}</span>` : `<span style="color: ${D_PRIMARY_DARK}; font-weight: bold;">${resItem.offer.name} (${eur(resItem.originalBillAnnual)})</span>`}</p>
-                         
-                         <table width="100%" cellpadding="0" cellspacing="0" style="table-layout: fixed; margin-bottom: 10px; background-color: white; border: 1px solid #eee;">
-                             <tr style="background-color: #f5f5f5;">
-                                 <th colspan="2" style="padding: 5px 8px; text-align: left; font-size: 12px; color: ${D_PRIMARY_MED}; border-bottom: 1px solid #ddd;">SIMULACIÓN DE COSTES POR PERIODO</th>
-                             </tr>
-                             <!-- Potencia -->
-                             <tr><td colspan="2" style="padding: 5px 8px; font-weight: bold; color: ${D_PRIMARY_MED};">POTENCIA</td></tr>
-                             ${desglosePotencia}
-                             <tr><td colspan="2" style="height: 5px;"></td></tr>
-                             <!-- Energía -->
-                             <tr><td colspan="2" style="padding: 5px 8px; font-weight: bold; color: ${D_PRIMARY_MED};">ENERGÍA</td></tr>
-                             ${desgloseEnergia}
-                             ${discountRowsHtml}
-                             <tr><td colspan="2" style="height: 5px;"></td></tr>
-                             <!-- Total -->
-                             <tr><td style="padding: 8px; background-color: ${BG_LIGHT}; font-weight: bold; color: ${D_PRIMARY_DARK};">TOTAL FACTURA (PERIODO)</td><td style="padding: 8px; background-color: ${BG_LIGHT}; font-weight: bold; color: ${D_PRIMARY_DARK}; text-align: right;">${eur(resItem.totalPeriod)}</td></tr>
-                         </table>
-                     </td></tr>
-                   `;
+                individualBreakdowns += `
+                    <tr><td colspan="2" style="padding: 15px 20px 0 20px; background-color: #f8fafc; border-top: 2px solid #ddd;">
+                        <h4 style="margin: 0 0 10px 0; font-size: 16px; color: ${D_PRIMARY_DARK}; font-weight: bold;">[${index + 1}] CUPS: ${resItem.cups} (${resItem.originalTariffType})</h4>
+                        <p style="margin: 0 0 10px 0; font-size: 12px; color: #555;">Días Facturados: ${resItem.dias_facturados}. Ahorro Anual: ${isBest ? `<span style="color: ${GREEN_SAVE}; font-weight: bold;">${eur(resItem.savings)}</span>` : `<span style="color: ${D_PRIMARY_DARK}; font-weight: bold;">${resItem.offer.name} (${eur(resItem.originalBillAnnual)})</span>`}</p>
+                        
+                        <table width="100%" cellpadding="0" cellspacing="0" style="table-layout: fixed; margin-bottom: 10px; background-color: white; border: 1px solid #eee;">
+                            <tr style="background-color: #f5f5f5;">
+                                <th colspan="2" style="padding: 5px 8px; text-align: left; font-size: 12px; color: ${D_PRIMARY_MED}; border-bottom: 1px solid #ddd;">SIMULACIÓN DE COSTES POR PERIODO</th>
+                            </tr>
+                            <!-- Potencia -->
+                            <tr><td colspan="2" style="padding: 5px 8px; font-weight: bold; color: ${D_PRIMARY_MED};">POTENCIA</td></tr>
+                            ${desglosePotencia}
+                            <tr><td colspan="2" style="height: 5px;"></td></tr>
+                            <!-- Energía -->
+                            <tr><td colspan="2" style="padding: 5px 8px; font-weight: bold; color: ${D_PRIMARY_MED};">ENERGÍA</td></tr>
+                            ${desgloseEnergia}
+                            ${discountRowsHtml}
+                            <tr><td colspan="2" style="height: 5px;"></td></tr>
+                            <!-- Total -->
+                            <tr><td style="padding: 8px; background-color: ${BG_LIGHT}; font-weight: bold; color: ${D_PRIMARY_DARK};">TOTAL FACTURA (PERIODO)</td><td style="padding: 8px; background-color: ${BG_LIGHT}; font-weight: bold; color: ${D_PRIMARY_DARK}; text-align: right;">${eur(resItem.totalPeriod)}</td></tr>
+                        </table>
+                    </td></tr>
+                `;
             });
             
             const tableMain = `width: 600px; max-width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; border: 1px solid #ddd; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;`;
@@ -2126,8 +2121,7 @@
             ` : '';
 
 
-            return `
-                <table cellpadding="0" cellspacing="0" style="${tableMain}">
+            return `<table cellpadding="0" cellspacing="0" style="${tableMain}">
                     <!-- HEADER -->
                     <tr><td colspan="2" style="${headerCell}">
                         <h1 style="margin:0; font-size: 24px;">ESTUDIO CONSOLIDADO DE AHORRO</h1>
@@ -2187,8 +2181,7 @@
 
                     <!-- PIE DE PÁGINA BONITO -->
                     <tr><td colspan="2" style="padding: 0; height: 10px;"><div style="${footerStyle}"></div></td></tr>
-                </table>
-            `;
+                </table>`;
         }
 
         // --- CÁMARA & QR (Añadido flujo MULTICUPS) ---
@@ -2246,7 +2239,7 @@
             document.getElementById('loading-status').classList.add('hidden');
 
             if (isMultiCupsMode) {
-                 showQRConfirmationModal(directData);
+                showQRConfirmationModal(directData);
             } else {
                 // Modo Individual: Precarga inputs y compara directamente si es 2.0TD
                 document.getElementById('input-cups').value = directData.cups;
@@ -2476,8 +2469,8 @@
                  item.isDrk = item.name?.toUpperCase().includes('DRK');
                  
                  if(item.p1_price !== undefined) data.push(item);
-             }
-             return data;
+              }
+              return data;
         }
 
         // --- MANEJO DE INPUTS MANUALES ---
@@ -2535,7 +2528,7 @@
             if (isMultiCupsMode) {
                 // Modo Multi: Mostrar selector de tarifa
                 if (currentTariffs['2.0TD'].length === 0 || currentTariffs['3.0TD'].length === 0) {
-                    return window.showErrorModal("Cargando tarifas. Por favor, espere y reintente.");
+                    return window.showErrorModal("Cargando tarifas para MultiCups...");
                 }
                 selectorWrapper.classList.remove('hidden');
                 modalTitleEl.textContent = `Añadir Suministro #${multiCupsData.length + 1} (Manual)`;
