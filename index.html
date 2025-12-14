@@ -872,9 +872,9 @@
             
             const selectorInput = document.querySelector(`input[name="comparison_mode"][value="${comparisonMode}"]`);
             if (selectorInput) {
-                 // Esto asegura que los estilos del modo sean los correctos
-                 selectorInput.checked = true;
-                 selectorInput.dispatchEvent(new Event('change'));
+                // Esto asegura que los estilos del modo sean los correctos
+                selectorInput.checked = true;
+                selectorInput.dispatchEvent(new Event('change'));
             }
 
             document.getElementById('landing-view').classList.remove('hidden');
@@ -1224,7 +1224,7 @@
                     potencia_p2_kw: total.powerP2,
                     consumo_punta: total.consumoP1, // Acumulado de E1/P1
                     consumo_llano: total.consumoP2, // Acumulado de E2/P2
-                    consumo_valle: total.consumoP3  // Acumulado de E3/P3
+                    consumo_valle: total.consumoP3 // Acumulado de E3/P3
                 },
                 individualResults: multiCupsData // Añadir resultados individuales para el desglose HTML
             };
@@ -1298,7 +1298,7 @@
             document.getElementById('new-monthly-cost-display').textContent = eur(res.totalAnnual / 12) + "/mes";
             document.getElementById('new-annual-cost-display').textContent = eur(res.totalAnnual) + "/año";
             
-            // 2. Desglose (Resumen de Consumos Acumulados)
+            // 2. Desglose (Resumen de Consumos Acumulados) - **Bloque de Consumos eliminado por petición del usuario**
             const consumptionData = res.totalConsumptions;
             
             let energyRows = `
@@ -1313,6 +1313,7 @@
                 <div class="flex justify-between text-xs mb-1"><span>P2 (Acumulado)</span><span class="font-mono">${num(consumptionData.potencia_p2_kw, 2)} kW</span></div>
             `;
 
+            // Mantener el HTML de consumo por si se requiere en el futuro, pero no se usa en el renderizado ahora.
             const consumptionHTML = `
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2"><p class="text-xs text-slate-500">Número de Suministros</p><p class="font-bold text-slate-700 text-xl">${individualResults.length}</p></div>
@@ -1415,51 +1416,50 @@
                       if (p.period <= powerPeriods) {
                           powerBreakdown += `<div class="flex justify-between"><span>P${p.period} (${num(p.kw, 2)} kW x ${numPriceFormula(p.priceDay)} €/día)</span><span>${num(p.cost, 2)} €</span></div>`;
                       }
-                 });
-                 
-                 const statusText = resItem.isNegativeSavings ? 
-                     `<p class="text-sm font-bold text-green-600 mb-2">✅ TU TARIFA ACTUAL es la mejor</p>` :
-                     `<p class="text-sm font-bold text-green-600 mb-2">💰 AHORRO ANUAL: ${eur(resItem.savings)}</p>`;
+                  });
+                    
+                    const statusText = resItem.isNegativeSavings ? 
+                        `<p class="text-sm font-bold text-green-600 mb-2">✅ TU TARIFA ACTUAL es la mejor</p>` :
+                        `<p class="text-sm font-bold text-green-600 mb-2">💰 AHORRO ANUAL: ${eur(resItem.savings)}</p>`;
 
-                 allBreakdownsHTML += `
-                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-lg text-sm">
-                        <h4 class="text-lg font-black text-slate-800 border-b pb-2 mb-3">Suministro ${index + 1}: ${resItem.cups} (${resItem.originalTariffType})</h4>
-                        ${statusText}
-                        <div class="grid grid-cols-2 gap-4 border-b border-slate-200 pb-3 mb-3">
-                            <div class="text-center">
-                                <p class="text-slate-400 text-xs uppercase">Factura Actual Periodo</p>
-                                <p class="font-bold text-red-500">${eur(resItem.importe_total)}</p>
+                    allBreakdownsHTML += `
+                        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-lg text-sm">
+                            <h4 class="text-lg font-black text-slate-800 border-b pb-2 mb-3">Suministro ${index + 1}: ${resItem.cups} (${resItem.originalTariffType})</h4>
+                            ${statusText}
+                            <div class="grid grid-cols-2 gap-4 border-b border-slate-200 pb-3 mb-3">
+                                <div class="text-center">
+                                    <p class="text-slate-400 text-xs uppercase">Factura Actual Periodo</p>
+                                    <p class="font-bold text-red-500">${eur(resItem.importe_total)}</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-slate-400 text-xs uppercase">Nuevo Coste Periodo</p>
+                                    <p class="font-black ${brand.PRIMARY_TEXT}">${eur(resItem.totalPeriod)}</p>
+                                </div>
                             </div>
-                            <div class="text-center">
-                                <p class="text-slate-400 text-xs uppercase">Nuevo Coste Periodo</p>
-                                <p class="font-black ${brand.PRIMARY_TEXT}">${eur(resItem.totalPeriod)}</p>
+
+                            <p class="font-bold text-slate-800 mb-2">Desglose (${resItem.offer.name}):</p>
+                            
+                            <div class="pl-2 space-y-2 font-mono text-xs">
+                                <p class="font-bold text-slate-700">POTENCIA</p>
+                                ${powerBreakdown}
+                                <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Potencia</span><span>${num(resItem.subPower, 2)} €</span></div>
+                                
+                                <p class="font-bold text-slate-700 pt-2">ENERGÍA</p>
+                                ${energyBreakdown}
+                                <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Energía (Neto)</span><span>${num(resItem.subEnergyNet, 2)} €</span></div>
+                                
+                                <div class="flex justify-between font-black ${brand.PRIMARY_TEXT} pt-2"><span>TOTAL CON IMPUESTOS</span><span>${eur(resItem.totalPeriod)}</span></div>
                             </div>
                         </div>
-
-                        <p class="font-bold text-slate-800 mb-2">Desglose (${resItem.offer.name}):</p>
-                        
-                        <div class="pl-2 space-y-2 font-mono text-xs">
-                            <p class="font-bold text-slate-700">POTENCIA</p>
-                            ${powerBreakdown}
-                            <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Potencia</span><span>${num(resItem.subPower, 2)} €</span></div>
-                            
-                            <p class="font-bold text-slate-700 pt-2">ENERGÍA</p>
-                            ${energyBreakdown}
-                            <div class="flex justify-between font-bold text-slate-800 border-t pt-1"><span>Subtotal Energía (Neto)</span><span>${num(resItem.subEnergyNet, 2)} €</span></div>
-                            
-                            <div class="flex justify-between font-black ${brand.PRIMARY_TEXT} pt-2"><span>TOTAL CON IMPUESTOS</span><span>${eur(resItem.totalPeriod)}</span></div>
-                        </div>
-                    </div>
-                `;
+                    `;
             });
 
 
             const detailsContainer = document.getElementById('details-container');
 
+            // *** MODIFICACIÓN SOLICITADA: ELIMINAR RESUMEN DE CONSUMOS ACUMULADOS (TOTAL) ***
             detailsContainer.innerHTML = `
                 ${tariffPricesHTML}
-                <h3 id="extracted-data-header" class="text-lg font-bold text-slate-800 border-l-4 ${brand.BORDER.replace('border-', 'border-')} pl-3">Resumen de Consumos Acumulados (Total)</h3>
-                <div id="user-consumption-details" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-sm">${consumptionHTML}</div>
                 
                 <h3 class="text-lg font-bold text-slate-800 border-l-4 border-green-500 pl-3" style="border-left-color: ${brand.QR_CENTER_BG};">Desglose Individual por Suministro</h3>
                 <p class="text-sm text-slate-500 mb-4 pl-3">A continuación, se muestra el cálculo detallado de la mejor oferta para cada CUPS, por orden de introducción:</p>
@@ -1737,25 +1737,25 @@
             const discountLine = bd.discountRate > 0 ? `Descuento: ${num(bd.discountRate * 100, 0)}% aplicado a Energía.${LB}` : '';
 
             const emailBody = `Hola ${D_BRAND_NAME.toUpperCase()}, confirmo la aceptación de la oferta con CUPS: ${bd.cups}.${LB}${LB}` +
-                                  `--- DATOS DE LA OFERTA ---${LB}${LB}` +
-                                  `Comercializadora y Tarifa: ${D_BRAND_NAME.toUpperCase()} - ${offer.name}${LB}` +
-                                  `Ahorro Anual Estimado: ${eur(bd.savings)}${LB}` +
-                                  `Total Mensual Estimado: ${monthlyEstimate}${LB}` +
-                                  `Consumo Total Facturado: ${totalConsumption}${LB}` +
-                                  `${discountLine}` + 
-                                  `--- DETALLE DE PRECIOS (€) ---${LB}` +
-                                  `P1 (Potencia - €/kW/día): ${numPriceFormula(p1PricePerDay)}${LB}` +
-                                  `P2 (Potencia - €/kW/día): ${numPriceFormula(p2PricePerDay)}${LB}` +
-                                  `E1 (Energía - €/kWh): ${numPriceFormula(e1Price)}${LB}` +
-                                  `E2 (Energía - €/kWh): ${numPriceFormula(e2Price)}${LB}` +
-                                  `E3 (Energía - €/kWh): ${numPriceFormula(e3Price)}${LB}` +
-                                  `------------------------------${LB}${LB}` +
-                                  `DATOS DEL CLIENTE (A RELLENAR):${LB}` +
-                                  `Nombre completo: ${clientName}${LB}` +
-                                  `Teléfono de contacto: ${clientPhone}${LB}` +
-                                  `Email de contacto: ${clientEmail}${LB}${LB}` +
-                                  `INFORMACIÓN ADICIONAL:${LB}` +
-                                  `[AGREGUE CUALQUIER COMENTARIO EXTRA AQUÍ]${LB}${LB}`;
+                                 `--- DATOS DE LA OFERTA ---${LB}${LB}` +
+                                 `Comercializadora y Tarifa: ${D_BRAND_NAME.toUpperCase()} - ${offer.name}${LB}` +
+                                 `Ahorro Anual Estimado: ${eur(bd.savings)}${LB}` +
+                                 `Total Mensual Estimado: ${monthlyEstimate}${LB}` +
+                                 `Consumo Total Facturado: ${totalConsumption}${LB}` +
+                                 `${discountLine}` + 
+                                 `--- DETALLE DE PRECIOS (€) ---${LB}` +
+                                 `P1 (Potencia - €/kW/día): ${numPriceFormula(p1PricePerDay)}${LB}` +
+                                 `P2 (Potencia - €/kW/día): ${numPriceFormula(p2PricePerDay)}${LB}` +
+                                 `E1 (Energía - €/kWh): ${numPriceFormula(e1Price)}${LB}` +
+                                 `E2 (Energía - €/kWh): ${numPriceFormula(e2Price)}${LB}` +
+                                 `E3 (Energía - €/kWh): ${numPriceFormula(e3Price)}${LB}` +
+                                 `------------------------------${LB}${LB}` +
+                                 `DATOS DEL CLIENTE (A RELLENAR):${LB}` +
+                                 `Nombre completo: ${clientName}${LB}` +
+                                 `Teléfono de contacto: ${clientPhone}${LB}` +
+                                 `Email de contacto: ${clientEmail}${LB}${LB}` +
+                                 `INFORMACIÓN ADICIONAL:${LB}` +
+                                 `[AGREGUE CUALQUIER COMENTARIO EXTRA AQUÍ]${LB}${LB}`;
 
             const subject = `FORMALIZACIÓN DE CONTRATO - CUPS: ${bd.cups}`;
             const formalizationRecipients = 'f.araujo@drk.es,r.guerra@drk.es,s.caballero@drk.es'; // Email por defecto
@@ -1773,7 +1773,7 @@
 
             // --- PLANTILLA PARA AHORRO NEGATIVO ---
             if (bd.isNegativeSavings) {
-                 return `<table cellpadding="0" cellspacing="0" style="${tableMain}">
+                return `<table cellpadding="0" cellspacing="0" style="${tableMain}">
                         <tr><td colspan="2" style="${headerCell}">
                             <h1 style="margin:0; font-size: 24px;">ESTUDIO DE AHORRO</h1>
                             <p style="margin:5px 0 0 0; font-size: 14px; opacity: 0.9;">TU TARIFA ACTUAL ES LA MÁS COMPETITIVA</p>
@@ -2015,8 +2015,8 @@
                 }).join('');
                 
                 const discountRowsHtml = resItem.discountAmount > 0 ? `
-                     <tr><td style="padding: 5px 8px; font-weight: bold; color: #CC0000;">DESCUENTO COMERCIAL (${num(resItem.discountRate * 100, 0)}%)</td><td style="padding: 5px 8px; text-align: right; font-weight: bold; color: #CC0000; white-space: nowrap;">-${num(resItem.discountAmount, 2)} €</td></tr>
-                 ` : '';
+                      <tr><td style="padding: 5px 8px; font-weight: bold; color: #CC0000;">DESCUENTO COMERCIAL (${num(resItem.discountRate * 100, 0)}%)</td><td style="padding: 5px 8px; text-align: right; font-weight: bold; color: #CC0000; white-space: nowrap;">-${num(resItem.discountAmount, 2)} €</td></tr>
+                   ` : '';
 
                 individualBreakdowns += `
                     <tr><td colspan="2" style="padding: 15px 20px 0 20px; background-color: #f8fafc; border-top: 2px solid #ddd;">
